@@ -15,6 +15,7 @@ public class simonStashes : MonoBehaviour
     public KMSelectable centerButton;
     public KMSelectable[] buttons;
     public Renderer[] buttonRenders;
+    public Material[] usedMats;
     public Color[] colors;
     public Color[] litColors;
     public Color gray;
@@ -156,15 +157,19 @@ public class simonStashes : MonoBehaviour
         centerButton.GetComponent<Renderer>().material.color = gray;
         yield return new WaitForSeconds(.4f);
         buttonLights[color1].enabled = true;
+        buttonRenders[color1].material = usedMats[1];
         buttonRenders[color1].material.color = litColors[colorsPresent[color1]];
         yield return new WaitForSeconds(.4f);
         buttonLights[color1].enabled = false;
+        buttonRenders[color1].material = usedMats[0];
         buttonRenders[color1].material.color = colors[colorsPresent[color1]];
         yield return new WaitForSeconds(.4f);
         buttonLights[color2].enabled = true;
+        buttonRenders[color2].material = usedMats[1];
         buttonRenders[color2].material.color = litColors[colorsPresent[color2]];
         yield return new WaitForSeconds(.4f);
         buttonLights[color2].enabled = false;
+        buttonRenders[color2].material = usedMats[0];
         buttonRenders[color2].material.color = colors[colorsPresent[color2]];
         yield return new WaitForSeconds(.4f);
         goto resetSequence;
@@ -176,6 +181,8 @@ public class simonStashes : MonoBehaviour
         if (flashing != null)
         {
             StopCoroutine(flashing);
+            buttonRenders[color1].material = usedMats[0];
+            buttonRenders[color2].material = usedMats[0];
             flashing = null;
         }
         centerLight.enabled = false;
@@ -196,7 +203,7 @@ public class simonStashes : MonoBehaviour
     {
         if (active)
         {
-            module.OnStrike();
+            module.HandleStrike();
             OnNeedyDeactivation();
         }
     }
@@ -212,6 +219,8 @@ public class simonStashes : MonoBehaviour
             if (flashing != null)
             {
                 StopCoroutine(flashing);
+                buttonRenders[color1].material = usedMats[0];
+                buttonRenders[color2].material = usedMats[0];
                 flashing = null;
             }
             for (int i = 0; i < 4; i++)
@@ -235,6 +244,7 @@ public class simonStashes : MonoBehaviour
 
     private IEnumerator Submit(bool correct)
     {
+        active = false;
         audio.PlaySoundAtTransform("InputCheck", centerButton.transform);
         autosolveInteract = false;
         for (int i = 0; i < 4; i++)
@@ -242,8 +252,10 @@ public class simonStashes : MonoBehaviour
             for (int j = 0; j < 4; j++)
             {
                 buttonLights[j].enabled = true;
+                buttonRenders[j].material = usedMats[1];
                 buttonRenders[j].material.color = litColors[colorsPresent[j]];
                 yield return new WaitForSeconds(.125f);
+                buttonRenders[j].material = usedMats[0];
                 buttonLights[j].enabled = false;
                 buttonRenders[j].material.color = colors[colorsPresent[j]];
             }
@@ -255,12 +267,13 @@ public class simonStashes : MonoBehaviour
         }
         if (!correct)
         {
-            module.OnStrike();
-            module.OnPass();
+            Debug.LogFormat("[Simon Stashes #{0}] Submitted incorrect binary: {1}", moduleId, selected.Select(a => a ? '1' : '0').Join(""));
+            module.HandleStrike();
+            module.HandlePass();
         }
         else
         {
-            module.OnPass();
+            module.HandlePass();
             yield return new WaitForSeconds(.1f);
             audio.PlaySoundAtTransform("InputCorrect", centerButton.transform);
         }
@@ -276,6 +289,7 @@ public class simonStashes : MonoBehaviour
         centerButton.GetComponent<Renderer>().material.color = gray;
         selected[ix] = true;
         buttonLights[ix].enabled = true;
+        buttonRenders[ix].material = usedMats[1];
         buttonRenders[ix].material.color = litColors[colorsPresent[ix]];
         pressedCount++;
         audio.PlaySoundAtTransform("ButtonPress" + pressedCount, button.transform);
@@ -283,28 +297,37 @@ public class simonStashes : MonoBehaviour
 
     // Twitch Plays
 #pragma warning disable 414
-    private readonly string TwitchHelpMessage = @"!{0} <1/2/3/4> [Presses those colored buttons, starting from the top-right and counting clockwise. Can be chained, i.e. ''!{0} press 134'.] !{0} center [Presses the gray button.]";
+    private readonly string TwitchHelpMessage = "\"!{0} <1/2/3/4>\" [Presses those colored buttons, starting from the top-right and counting clockwise. Multiples can be chained, i.e. \"!{0} 134\".] | \"!{0} center/submit/gray/grey/a\" [Presses the gray button.] | Mentioned commands can be chained by spacing out the presses, i.e. \"!{0} center 134 a\"";
     private bool autosolveInteract;
 #pragma warning restore 414
 
     private IEnumerator ProcessTwitchCommand(string cmd)
     {
-        if (cmd.Trim().All(x => "1234".Contains(x)))
+        var selectablesAll = new List<KMSelectable>();
+        var centerPressOptions = new string[] { "c", "gray", "grey", "center", "centre", "middle", "submit", "enter", "a" };
+        var intCmd = cmd.Trim();
+        foreach (var cmdPortion in intCmd.Split())
         {
-            yield return null;
-            for (int i = 0; i < cmd.Length; i++)
+            if (cmdPortion.All(x => "1234".Contains(x)))
             {
-                buttons[Int32.Parse(cmd[i].ToString()) - 1].OnInteract();
-                yield return new WaitForSeconds(.1f);
+                yield return null;
+                for (int i = 0; i < cmdPortion.Length; i++)
+                    selectablesAll.Add(buttons[int.Parse(cmdPortion[i].ToString()) - 1]);
             }
+            else if (centerPressOptions.Contains(cmdPortion.ToLowerInvariant()))
+            {
+                selectablesAll.Add(centerButton);
+            }
+            else
+                yield break;
         }
-        else if (new string[] { "c", "gray", "grey", "center", "centre", "middle", "submit", "enter" }.Contains(cmd.Trim().ToLowerInvariant()))
-        {
+        if (selectablesAll.Any())
             yield return null;
-            centerButton.OnInteract();
+        foreach (var selectable in selectablesAll)
+        {
+            selectable.OnInteract();
+            yield return new WaitForSeconds(.1f);
         }
-        else
-            yield break;
     }
 
     private void TwitchHandleForcedSolve()
