@@ -81,7 +81,7 @@ public class simonStashes : MonoBehaviour
         active = true;
         colorsPresent = Enumerable.Range(0, 6).ToList().Shuffle().Take(4).ToArray();
         var colorString = "RGBCMY";
-        colorblindText.text = string.Format("{0}{1}\n{2}{3}", colorString[colorsPresent[3]], colorString[colorsPresent[0]], colorString[colorsPresent[1]], colorString[colorsPresent[2]]);
+        colorblindText.text = string.Format("{0}{1}\n{3}{2}", colorString[colorsPresent[3]], colorString[colorsPresent[0]], colorString[colorsPresent[1]], colorString[colorsPresent[2]]);
         color1 = rnd.Range(0, 4);
         color2 = rnd.Range(0, 4);
         Debug.LogFormat("[Simon Stashes #{0}] Needy activated!", moduleId);

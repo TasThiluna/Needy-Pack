@@ -33,7 +33,6 @@ public class boozleglyphIdentification : MonoBehaviour
     private int chosenLetter;
     private int chosenSet;
     private static readonly string[] alphabet = new string[26] { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
-    private static readonly string[] setNumbers = new string[3] { "1", "2", "3" };
 
     private static int moduleIdCounter = 1;
     private int moduleId;
@@ -66,7 +65,7 @@ public class boozleglyphIdentification : MonoBehaviour
         screenText.text = "A";
         letterIndex = rnd.Range(0, 26);
         setIndex = rnd.Range(0, 3);
-        Debug.LogFormat("[Boozleglyph Identification #{0}] The displayed boozleglyph is {1} from set {2}.", moduleId, alphabet[letterIndex], setNumbers[setIndex]);
+        Debug.LogFormat("[Boozleglyph Identification #{0}] The displayed boozleglyph is {1} from set {2}.", moduleId, alphabet[letterIndex], "ABC"[setIndex]);
         screen.material.mainTexture = allTextures[setIndex][letterIndex];
     }
 
@@ -111,12 +110,12 @@ public class boozleglyphIdentification : MonoBehaviour
         {
             if (chosenSet != setIndex)
             {
-                Debug.LogFormat("[Boozleglyph Identification #{0}] Submitted set {1}, that is incorrect. Strike!", moduleId, setNumbers[chosenSet]);
+                Debug.LogFormat("[Boozleglyph Identification #{0}] Submitted set {1}, that is incorrect. Strike!", moduleId, "ABC"[chosenSet]);
                 module.OnStrike();
             }
             else
             {
-                Debug.LogFormat("[Boozleglyph Identification #{0}] Submitted set {1}, that is correct. Module temporarily neutralized!", moduleId, setNumbers[chosenSet]);
+                Debug.LogFormat("[Boozleglyph Identification #{0}] Submitted set {1}, that is correct. Module temporarily neutralized!", moduleId, "ABC"[chosenSet]);
                 module.OnPass();
                 OnNeedyDeactivation();
             }
@@ -155,12 +154,12 @@ public class boozleglyphIdentification : MonoBehaviour
         if (stage == 0)
             screenText.text = alphabet[chosenLetter];
         else
-            screenText.text = setNumbers[chosenSet];
+            screenText.text = "ABC"[chosenSet].ToString();
     }
 
     // Twitch Plays
 #pragma warning disable 414
-    private readonly string TwitchHelpMessage = @"!{0} submit <boz> <set> [Submits the boozleglyph 'boz' from set 'set'] | Valid boozleglyphs are A-Z | Valid sets are 1-3";
+    private readonly string TwitchHelpMessage = @"!{0} submit <boz> <set> [Submits the boozleglyph 'boz' from set 'set'] | Valid boozleglyphs are A-Z | Valid sets are A, B, C";
 #pragma warning restore 414
 
     private IEnumerator ProcessTwitchCommand(string command)
@@ -290,7 +289,7 @@ public class boozleglyphIdentification : MonoBehaviour
             while (!active) { yield return new WaitForSeconds(0.1f); }
             if (stage == 1)
                 stage = 0;
-            yield return ProcessTwitchCommand("submit " + alphabet[letterIndex] + " " + setNumbers[setIndex]);
+            yield return ProcessTwitchCommand("submit " + alphabet[letterIndex] + " " + "ABC"[setIndex]);
         }
     }
 }
