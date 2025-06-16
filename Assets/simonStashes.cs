@@ -177,6 +177,8 @@ public class simonStashes : MonoBehaviour
 
     protected void OnNeedyDeactivation()
     {
+        if (colorsPresent == null)
+            return;
         active = false;
         if (flashing != null)
         {
